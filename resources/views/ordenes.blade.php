@@ -84,7 +84,7 @@
                 <td>{{ $orden->entrega === 'entrega_domicilio' ? 'A domicilio' : 'En empresa' }}</td>
                 <td>{{ $orden->pago }}</td>
                 <td>{{ $orden->total }}</td>
-                <td>{{ $orden->created_at->format('Y-m-d H:i') }}</td>
+                <td>{{ optional($orden->created_at)->format('Y-m-d H:i') }}</td>
             </tr>
             @empty
             <tr>
