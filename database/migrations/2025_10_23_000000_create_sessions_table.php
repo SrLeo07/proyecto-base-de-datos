@@ -13,11 +13,16 @@ class CreateSessionsTable extends Migration
      */
     public function up()
     {
-        Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->text('payload');
-            $table->integer('last_activity');
-        });
+        // Skip creating the table if it already exists (prevents ORA-00955 on Oracle)
+        if (!Schema::hasTable('sessions')) {
+            Schema::create('sessions', function (Blueprint $table) {
+                // explicit length for Oracle compatibility
+                $table->string('id', 255)->primary();
+                // use longText to map to CLOB in Oracle via yajra
+                $table->longText('payload');
+                $table->integer('last_activity');
+            });
+        }
     }
 
     /**

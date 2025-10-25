@@ -83,12 +83,22 @@
             <path d="M18 34l10 10 18-18" stroke="#43a047" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <h1>¡Orden recibida!</h1>
-        <p>Gracias, <strong>{{ $nombre }}</strong>.</p>
-        <p>Tu orden para <strong>{{ $servicio }}</strong> ha sido registrada.</p>
-        <p>Entrega: <strong>{{ $entrega === 'entrega_domicilio' ? 'Entrega a domicilio' : 'Recoger en empresa' }}</strong></p>
+    <p>Gracias, <strong>{{ $nombre ?? '' }}</strong>.</p>
+    <p>Tu orden para <strong>{{ $servicio ?? '' }}</strong> ha sido registrada.</p>
+    <p>Entrega: <strong>{{ (($entrega ?? '') === 'entrega_domicilio') ? 'Entrega a domicilio' : 'Recoger en empresa' }}</strong></p>
         <p>Pago: <strong>Tarjeta de crédito vía Paypal</strong></p>
-        <div class="total">Total estimado: Q{{ $total }}</div>
-        <p>Nos comunicaremos al teléfono <strong>{{ $telefono }}</strong> para coordinar la recogida/entrega.</p>
+    <div class="total">Total estimado: Q{{ $total ?? '0' }}</div>
+    <p>Nos comunicaremos al teléfono <strong>{{ $telefono ?? '' }}</strong> para coordinar la recogida/entrega.</p>
+        
+        <!-- Formulario de PayPal -->
+        <form action="{{ route('paypal.payment') }}" method="POST">
+            @csrf
+            <input type="hidden" name="orden_id" value="{{ $orden->id ?? '' }}">
+            <button type="submit" style="background-color: #0070ba; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px 0;">
+                Pagar con PayPal
+            </button>
+        </form>
+        
         <a href="{{ url('/') }}">Volver al inicio</a>
     </div>
 </body>

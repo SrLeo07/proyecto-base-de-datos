@@ -125,6 +125,19 @@ return [
             'prefix' => env('DB_PREFIX', ''),
         ],
 
+        /*
+         |--------------------------------------------------------------------------
+         | Forced Oracle connection (temporary)
+         |--------------------------------------------------------------------------
+         |
+         | Esto es una conexión temporal y explícita que puede usarse desde CLI
+         | para ejecutar migraciones contra Oracle sin depender de variables de
+         | entorno o de la configuración cacheada. Elimina/ajusta esto cuando
+         | confirmes que Laravel usa correctamente la conexión `oracle`.
+         |
+         */
+        /* oracle_force removed — use the 'oracle' connection configured via .env */
+
     ],
 
     /*
