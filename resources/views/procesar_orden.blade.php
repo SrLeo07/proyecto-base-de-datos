@@ -82,22 +82,29 @@
             <circle cx="32" cy="32" r="32" fill="#b2dfdb"/>
             <path d="M18 34l10 10 18-18" stroke="#43a047" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <h1>¡Orden recibida!</h1>
+        <h1>{{ $orden->estado === 'pagado' ? '¡Pago completado!' : '¡Orden recibida!' }}</h1>
     <p>Gracias, <strong>{{ $nombre ?? '' }}</strong>.</p>
     <p>Tu orden para <strong>{{ $servicio ?? '' }}</strong> ha sido registrada.</p>
     <p>Entrega: <strong>{{ (($entrega ?? '') === 'entrega_domicilio') ? 'Entrega a domicilio' : 'Recoger en empresa' }}</strong></p>
-        <p>Pago: <strong>Tarjeta de crédito vía Paypal</strong></p>
-    <div class="total">Total estimado: Q{{ $total ?? '0' }}</div>
+        <p>Pago: <strong>{{ $orden->estado === 'pagado' ? 'Completado vía PayPal' : 'Pendiente vía PayPal' }}</strong></p>
+    <div class="total">Total estimado: ${{ number_format($total ?? 0, 2) }}</div>
     <p>Nos comunicaremos al teléfono <strong>{{ $telefono ?? '' }}</strong> para coordinar la recogida/entrega.</p>
         
-        <!-- Formulario de PayPal -->
-        <form action="{{ route('paypal.payment') }}" method="POST">
-            @csrf
-            <input type="hidden" name="orden_id" value="{{ $orden->id ?? '' }}">
-            <button type="submit" style="background-color: #0070ba; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px 0;">
-                Pagar con PayPal
-            </button>
-        </form>
+        @if($orden->estado !== 'pagado')
+            <!-- Formulario de PayPal (solo si no está pagada) -->
+            <form action="{{ route('paypal.payment') }}" method="POST">
+                @csrf
+                <input type="hidden" name="orden_id" value="{{ $orden->id ?? '' }}">
+                <button type="submit" style="background-color: #0070ba; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 10px 0;">
+                    Pagar con PayPal
+                </button>
+            </form>
+        @else
+            <!-- Mensaje de éxito si está pagada -->
+            <div style="background-color: #e8f5e9; color: #2e7d32; padding: 12px; border-radius: 5px; margin: 10px 0;">
+                <strong>¡Pago exitoso!</strong> Tu orden ha sido confirmada y será procesada.
+            </div>
+        @endif
         
         <a href="{{ url('/') }}">Volver al inicio</a>
     </div>

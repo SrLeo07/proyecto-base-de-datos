@@ -177,22 +177,22 @@
             <div class="service-card">
                 <svg fill="none" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#b3e5fc"/><ellipse cx="24" cy="32" rx="14" ry="8" fill="#81d4fa"/><ellipse cx="24" cy="32" rx="10" ry="5" fill="#4fc3f7"/></svg>
                 <div class="service-title">Lavado</div>
-                <div class="service-price">Q25</div>
+                <div class="service-price">$3.25</div>
             </div>
             <div class="service-card">
                 <svg fill="none" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20" fill="#ffe082"/><path d="M24 14v20M14 24h20" stroke="#ffb300" stroke-width="3" stroke-linecap="round"/></svg>
                 <div class="service-title">Secado</div>
-                <div class="service-price">Q15</div>
+                <div class="service-price">$2.00</div>
             </div>
             <div class="service-card">
                 <svg fill="none" viewBox="0 0 48 48"><rect x="10" y="20" width="28" height="14" rx="7" fill="#b2dfdb"/><rect x="16" y="26" width="16" height="6" rx="3" fill="#26a69a"/></svg>
                 <div class="service-title">Aspirado</div>
-                <div class="service-price">Q20</div>
+                <div class="service-price">$2.50</div>
             </div>
             <div class="service-card">
                 <svg fill="none" viewBox="0 0 48 48"><ellipse cx="24" cy="24" rx="20" ry="12" fill="#b2ebf2"/><ellipse cx="24" cy="24" rx="14" ry="7" fill="#81d4fa"/><ellipse cx="24" cy="24" rx="10" ry="4" fill="#4fc3f7"/></svg>
                 <div class="service-title">Lavado + Secado</div>
-                <div class="service-price">Q35</div>
+                <div class="service-price">$4.50</div>
             </div>
         </div>
         <h2>¿Cómo funciona?</h2>
@@ -210,7 +210,7 @@
             </tr>
             <tr>
                 <td>Recogida o entrega a domicilio</td>
-                <td>Q10 extra</td>
+                <td>$1.25 extra</td>
             </tr>
         </table>
         <div style="text-align:center;">

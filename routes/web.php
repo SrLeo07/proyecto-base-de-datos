@@ -17,28 +17,39 @@ Route::get('/orden', function () {
 Route::post('/procesar-orden', function (Request $request) {
     try {
         $tarifas = [
-            'lavado' => 25,
-            'secado' => 15,
-            'aspirado' => 20,
-            'lavado_secado' => 35
+            'lavado' => 3.25,
+            'secado' => 2.00,
+            'aspirado' => 2.50,
+            'lavado_secado' => 4.50
         ];
         $servicio = $request->input('servicio');
         $entrega = $request->input('entrega');
-        $total = $tarifas[$servicio] ?? 0;
+        $total = floatval($tarifas[$servicio] ?? 0);
         if ($entrega === 'entrega_domicilio') {
-            $total += 10;
+            $total += 1.25;
         }
+        $total = round($total, 2); // Asegurarnos de que solo tenga 2 decimales
 
-        // Guardar la orden en la base de datos (tabla 'ordenes')
-        $orden = Orden::create([
+        // Preparar datos de la orden
+        $orderData = [
             'nombre' => $request->input('nombre'),
-            'direccion' => $request->input('direccion'),
             'telefono' => $request->input('telefono'),
             'servicio' => $servicio,
             'entrega' => $entrega,
             'pago' => $request->input('pago'),
-            'total' => $total,
-        ]);
+            'total' => $total
+        ];
+
+        // Añadir dirección solo si es entrega a domicilio
+        if ($entrega === 'entrega_domicilio') {
+            if (!$request->filled('direccion')) {
+                throw new \Exception('La dirección es requerida para entregas a domicilio');
+            }
+            $orderData['direccion'] = $request->input('direccion');
+        }
+
+        // Guardar la orden en la base de datos (tabla 'ordenes')
+        $orden = Orden::create($orderData);
 
         // Si es una petición AJAX o espera JSON
         if ($request->ajax() || $request->wantsJson()) {
@@ -93,7 +104,7 @@ Route::post('/paypal/payment', [App\Http\Controllers\PayPalController::class, 'c
     ->name('paypal.payment')
     ->middleware('web');  // Asegura que tengamos acceso a la sesión y CSRF
 
-Route::get('/paypal/success', [App\Http\Controllers\PayPalController::class, 'success'])
+Route::post('/paypal/success', [App\Http\Controllers\PayPalController::class, 'success'])
     ->name('paypal.success')
     ->middleware('web');
 

@@ -116,7 +116,7 @@ class PayPalController extends Controller
                         'orden_id' => $orden->id,
                         'debug_info' => [
                             'order_total' => $orden->total,
-                            'currency' => 'GTQ',
+                            'currency' => config('paypal.currency'),
                             'mode' => config('paypal.mode')
                         ]
                     ]);
@@ -144,42 +144,115 @@ class PayPalController extends Controller
 
     public function success(Request $request)
     {
-        // Asegurarnos de que tengamos un token
-        if (!$request->token) {
+        Log::debug('PayPal success callback received', [
+            'method' => $request->method(),
+            'data' => $request->all(),
+            'headers' => $request->headers->all()
+        ]);
+
+        // El token puede venir de diferentes fuentes
+        $token = $request->input('orderID') ?? // Del SDK de PayPal
+                $request->input('token') ?? // De la redirección de PayPal
+                $request->query('token'); // De la URL en GET
+        
+        if (!$token) {
+            $error = 'No se proporcionó token de PayPal';
+            Log::error('PayPal success: no token found', [
+                'request_data' => $request->all(),
+                'request_method' => $request->method()
+            ]);
+            
             if ($request->wantsJson()) {
-                return response()->json(['error' => 'No se proporcionó token de PayPal'], 400);
+                return response()->json([
+                    'error' => true,
+                    'message' => $error
+                ], 400);
             }
-            return redirect()->route('ordenes')->with('error', 'No se proporcionó token de PayPal');
+            return redirect()->route('ordenes')->with('error', $error);
         }
+
+        Log::info('Processing PayPal payment', ['token' => $token]);
 
         $provider = new PayPalClient;
         $provider->setApiCredentials(config('paypal'));
-        $provider->getAccessToken();
+        
+        try {
+            $accessToken = $provider->getAccessToken();
+            Log::debug('PayPal access token obtained', ['success' => true]);
+        } catch (\Exception $e) {
+            Log::error('PayPal access token error', ['error' => $e->getMessage()]);
+            throw $e;
+        }
 
         try {
-            // Log merchant info before capture
-            $merchantInfo = $provider->showOrderDetails($request->token);
-            Log::debug('PayPal merchant details', ['order_id' => $request->token, 'merchant_info' => $merchantInfo]);
+            Log::info('Capturing PayPal payment', ['token' => $token]);
+            
+            // Verificar el estado de la orden
+            $orderDetails = $provider->showOrderDetails($token);
+            Log::debug('PayPal order details', [
+                'token' => $token,
+                'status' => $orderDetails['status'] ?? 'unknown'
+            ]);
 
-            $response = $provider->capturePaymentOrder($request->token);
+            // Solo capturar si no está ya capturada
+            if (isset($orderDetails['status']) && $orderDetails['status'] !== 'COMPLETED') {
+                $response = $provider->capturePaymentOrder($token);
+                Log::debug('PayPal capture response', ['response' => $response]);
+            } else {
+                $response = $orderDetails;
+                Log::info('Order already captured', ['status' => $orderDetails['status']]);
+            }
 
             // Log the raw capture response for debugging
-            Log::debug('PayPal capture response', ['request_token' => $request->token, 'response' => $response]);
+            Log::debug('PayPal capture response', ['token' => $token, 'response' => $response]);
 
             if (isset($response['status']) && $response['status'] == 'COMPLETED') {
-                $orden = Orden::where('paypal_order_id', $request->token)->first();
+                // Buscar primero por paypal_order_id
+                $orden = Orden::where('paypal_order_id', $token)->first();
 
-                if (! $orden) {
-                    Log::error('PayPal success: local order not found for token', ['token' => $request->token]);
-                    return redirect()->route('ordenes')->with('error', 'Pago procesado, pero la orden local no fue encontrada.');
+                // Si no se encuentra, intentar buscar por orden_id enviado en la petición
+                if (!$orden && $request->has('orden_id')) {
+                    $orden = Orden::find($request->input('orden_id'));
+                    if ($orden) {
+                        $orden->paypal_order_id = $token;
+                    }
+                }
+
+                if (!$orden) {
+                    Log::error('PayPal success: local order not found', [
+                        'token' => $token,
+                        'orden_id' => $request->input('orden_id')
+                    ]);
+                    if ($request->wantsJson()) {
+                        return response()->json([
+                            'error' => true,
+                            'message' => 'Orden no encontrada'
+                        ], 404);
+                    }
+                    return redirect()->route('ordenes')
+                        ->with('error', 'Pago procesado, pero la orden local no fue encontrada.');
                 }
 
                 $orden->estado = 'pagado';
                 $orden->save();
 
-                // Redirigimos a la página final de "Orden recibida"
-                return redirect()->route('ordenes.recibida', $orden->id)
-                               ->with('success', '¡Pago completado con éxito!');
+                Log::info('Orden marcada como pagada', [
+                    'orden_id' => $orden->id,
+                    'paypal_order_id' => $token
+                ]);
+
+                // Responder según el tipo de petición
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => '¡Pago completado con éxito!',
+                        'orden_id' => $orden->id
+                    ]);
+                }
+
+                // Si no es JSON, redirigir a la vista de la orden
+                return redirect()->route('ordenes.show', ['id' => $orden->id])
+                    ->with('success', '¡Pago completado con éxito!');
             }
 
             Log::error('PayPal capture not COMPLETED', ['response' => $response]);
